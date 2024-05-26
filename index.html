@@ -48,7 +48,7 @@ const getQueryParams = () => {
 
 const queries = getQueryParams();
 
-const styleName = queries.style || "mono";
+const styleName = queries.style || "chisui";
 
 /*************************************************/
 /*MapLibre+PMTiles 関係設定                      */
@@ -88,6 +88,24 @@ map.on('click', e => {
 
 map.on('load', function() {
 
+
+  map.addSource("slopemap", {
+    "type": "raster",
+    "minzoom":3,
+    "maxzoom":15,
+    "tiles":["https://cyberjapandata.gsi.go.jp/xyz/slopemap/{z}/{x}/{y}.png"],
+    "tileSize": 256,
+    "attribution":"<a href='https://maps.gsi.go.jp/development/ichiran.html#slopemap' target='_blank'>地理院タイル</a>"
+  });
+  map.addLayer({ 
+    "id":"slopemap",
+    "type":"raster",
+    "source":"slopemap",
+    "paint":{
+      "raster-opacity": 0.5
+    }
+  }, "水域");
+  
   map.addSource("hazardmap", {
     "type": "raster",
     "minzoom":2,
@@ -100,7 +118,8 @@ map.on('load', function() {
     "id":"hazardmap-background",
     "type":"background",
     "paint":{
-      "background-color": "#FFFFFF"
+      "background-color": "#FFFFFF",
+      "background-opacity": 0
     }
   }, "水域");
   map.addLayer({ 
@@ -111,6 +130,8 @@ map.on('load', function() {
       "raster-opacity": 1
     }
   }, "水域");
+
+  
   
   map.addSource('target', {
     type: 'geojson',
