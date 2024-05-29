@@ -13,11 +13,8 @@
   width: 100%;
   height: 400px;
 }
-#canvas-area {
-  display: inline-block;
-  margin: 4px;
-}
-#combinedCanvas {
+
+canvas {
   margin: 0px;
   padding: 0px;
   border: solid 1px #CCCCCC;
@@ -28,9 +25,9 @@
 <div id="input-area">
   <label for="px">バッファ（ピクセル）:</label>
   <input type="number" id="px" name="px" min="0" max="125" value="50"/>
+  ※地図は洪水（最大最大規模）のみ表示
 </div>
 <div id="map"></div>
-<div id="canvas-area"><canvas id="combinedCanvas" width="1" height="1"></canvas></div>
 <div id="result"></div>
 <script>
 
@@ -76,14 +73,38 @@ map.addControl(new maplibregl.AttributionControl({compact: true}), 'top-right');
 
 map.showTileBoundaries = true;
 
+const disaster = [
+  "01_flood_l2_shinsuishin",
+  "01_flood_l2_kaokutoukai_hanran_data",
+  "01_flood_l2_kaokutoukai_kagan_data",
+  "02_naisui_data",
+  //  "01_flood_l2_kaokutoukai_hanran_riskhantei",
+  //  "01_flood_l2_kaokutoukai_kagan",
+  "03_hightide_l2_shinsuishin",
+  "04_tsunami_newlegend",
+  "05_dosekiryukeikaikuiki",
+  "05_kyukeishakeikaikuiki",
+  "05_jisuberikeikaikuiki",
+  "05_nadarekikenkasyo",
+  "07_tameike"
+];
+
 map.on('click', e => {
   const px = +document.getElementById("px").value;
   const center = e.lngLat;
-  //const center = map.getCenter();
-  console.log(center);    
+  console.log(center);
   const z = Math.round(map.getZoom());
   const zl = (z+2 < 17) ? z+2 : 17;
-  drawTileImages(center.lat, center.lng, zl, px);
+  
+  document.getElementById("result").innerHTML = "";
+  disaster.forEach( ds => {
+    const el = document.createElement('div')
+    el.id = ds;
+    document.getElementById("result").appendChild(el);
+  });
+  disaster.forEach( ds => {
+    drawTileImages(center.lat, center.lng, zl, px, ds);
+  });
 });
 
 map.on('load', function() {
@@ -317,21 +338,25 @@ const infoFromColor = ( r, g, b ) => {
   
 }
 
-const drawTileImages = (lat, lng, zl, px) => {
+const drawTileImages = (lat, lng, zl, px, ds) => {
     
     const tiles = getTileList(lat, lng, zl, px);
     console.log(tiles);
     
-    const canvas = document.getElementById('combinedCanvas');
+    const title = document.createElement('div');
+    title.innerText = ds;
+    
+    const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
 
     // 画像の読み込み
+    const tileId = ds;
     const imageSources = tiles.map( info => {
       // { src: 'image3.jpg', x: 400, y: 200 }
       const X = info.X;
       const Y = info.Y;
       const tilename = `${zl}-${X}-${Y}`;
-      const url = `https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/${zl}/${X}/${Y}.png`;
+      const url = `https://disaportaldata.gsi.go.jp/raster/${tileId}/${zl}/${X}/${Y}.png`;
       
       
       return {
@@ -441,7 +466,13 @@ const drawTileImages = (lat, lng, zl, px) => {
         const ch = buf.length / ( canvas.width * canvas.height );
         for( let i = 0; i < buf.length / ch; i++ ){
           const [ r, g, b, a ] = [ buf[ i * ch ], buf[ i * ch + 1 ], buf[ i * ch + 2 ], buf[ i * ch + 3 ]  ];
-          const dp = infoFromColor( r, g, b ); //`${r}-${g}-${b}-${a}`;
+          let dp = "";
+          if(ds == "01_flood_l2_shinsuishin" || ds == "03_hightide_l2_shinsuishin" || ds == "04_tsunami_newlegend"){
+            dp = infoFromColor( r, g, b ); //`${r}-${g}-${b}-${a}`;
+          }else{
+            dp = `${r}-${g}-${b}`;
+          } 
+          dp = `<span style="background-color:rgb(${r},${g},${b});">${dp}</span>`;
           if(!tmp[dp]) tmp[dp] = 0;
           tmp[dp] += 1;
         }
@@ -486,12 +517,17 @@ const drawTileImages = (lat, lng, zl, px) => {
         html += "</table>" + `<div>※読込 ZL：${zl}, バッファ：${px} px,
                               <br>１辺：${px*2+1} px（約${dist*2} m）, 
                               <br>ピクセル総数：${canvas.width * canvas.height}</div>`;
-        document.getElementById("result").innerHTML = html;
+                              
+        const div = document.createElement('div');
+        div.innerHTML = html;
         
+        const parent = document.getElementById(ds);
+        parent.appendChild(document.createElement('hr'));
+        parent.appendChild(title);
+        parent.appendChild(canvas);
+        parent.appendChild(div);
     }
     
-    
-
 };
 </script>
 </body>
