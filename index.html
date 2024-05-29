@@ -19,13 +19,32 @@ canvas {
   padding: 0px;
   border: solid 1px #CCCCCC;
 }
+
+#result {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 4px;
+}
+
+#result div {
+  min-width: 250px;
+  overflow-wrap: break-word;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+table th, table td {
+  border: solid #AAA 1px;
+}
 </style>
 </head>
 <body>
 <div id="input-area">
   <label for="px">バッファ（ピクセル）:</label>
   <input type="number" id="px" name="px" min="0" max="125" value="50"/>
-  ※地図は洪水（最大最大規模）のみ表示
+  <label for="disaster">災害リスク情報:</label>
 </div>
 <div id="map"></div>
 <div id="result"></div>
@@ -47,6 +66,8 @@ const queries = getQueryParams();
 
 const styleName = queries.style || "chisui";
 
+
+ 
 /*************************************************/
 /*MapLibre+PMTiles 関係設定                      */
 /*************************************************/
@@ -111,7 +132,6 @@ map.on('click', e => {
 
 map.on('load', function() {
 
-
   map.addSource("slopemap", {
     "type": "raster",
     "minzoom":3,
@@ -128,32 +148,6 @@ map.on('load', function() {
       "raster-opacity": 0.5
     }
   }, "水域");
-  
-  map.addSource("hazardmap", {
-    "type": "raster",
-    "minzoom":2,
-    "maxzoom":17,
-    "tiles":["https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/{z}/{x}/{y}.png"],
-    "tileSize": 256,
-    "attribution":"<a href='https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html' target='_blank'>重ねるハザードマップ</a>"
-  });
-  map.addLayer({ 
-    "id":"hazardmap-background",
-    "type":"background",
-    "paint":{
-      "background-color": "#FFFFFF",
-      "background-opacity": 0
-    }
-  }, "水域");
-  map.addLayer({ 
-    "id":"hazardmap",
-    "type":"raster",
-    "source":"hazardmap",
-    "paint":{
-      "raster-opacity": 1
-    }
-  }, "水域");
-
   
   
   map.addSource('target', {
@@ -189,6 +183,53 @@ map.on('load', function() {
       'circle-color': '#0000FF'
     }
   });
+  
+  
+  const formArea = document.getElementById("input-area");
+
+  const select = document.createElement("select");
+  select.setAttribute("id", "disaster");
+  select.setAttribute("name", "disaster");
+  
+  const _disaster = ["---"].concat(disaster);
+  
+  _disaster.forEach( ds => {
+    const option = document.createElement("option");
+    option.setAttribute("value", ds);
+    option.innerText = ds;
+    select.appendChild(option);
+  });
+
+  select.addEventListener("change", () => {
+    
+    const ds = document.getElementById("disaster").value;
+    
+    if(map.getLayer("disaster")){
+      map.removeLayer("disaster");
+      map.removeSource("disaster");
+    }
+    
+    if(ds == "---") return;
+    
+    map.addSource("disaster", {
+      "type": "raster",
+      "minzoom":2,
+      "maxzoom":17,
+      "tiles":[`https://disaportaldata.gsi.go.jp/raster/${ds}/{z}/{x}/{y}.png`],
+      "tileSize": 256,
+      "attribution":"<a href='https://disaportal.gsi.go.jp/hazardmapportal/hazardmap/copyright/opendata.html' target='_blank'>重ねるハザードマップ</a>"
+    });
+    map.addLayer({ 
+      "id": "disaster",
+      "type":"raster",
+      "source": "disaster",
+      "paint":{
+        "raster-opacity": 1
+      }
+    }, "水域");
+    
+  });
+  formArea.appendChild(select);  
   
 });
 
@@ -520,8 +561,8 @@ const drawTileImages = (lat, lng, zl, px, ds) => {
         );
         
         html += "</table>" + `<div>※読込 ZL：${zl}, バッファ：${px} px,
-                              <br>１辺：${px*2+1} px（約${dist*2} m）, 
-                              <br>ピクセル総数：${canvas.width * canvas.height}</div>`;
+                              １辺：${px*2+1} px（約${dist*2} m）, 
+                              ピクセル総数：${canvas.width * canvas.height}</div>`;
                               
         const div = document.createElement('div');
         div.innerHTML = html;
