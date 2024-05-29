@@ -561,7 +561,7 @@ const drawTileImages = (lat, lng, zl, px, ds) => {
         );
         
         html += "</table>" + `<div>※読込 ZL：${zl}, バッファ：${px} px,
-                              １辺：${px*2+1} px（約${dist*2} m）, 
+                              １辺：${px*2+1} px（約${dist} m）, 
                               ピクセル総数：${canvas.width * canvas.height}</div>`;
                               
         const div = document.createElement('div');
