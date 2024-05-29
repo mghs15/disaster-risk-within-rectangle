@@ -75,18 +75,20 @@ map.showTileBoundaries = true;
 
 const disaster = [
   "01_flood_l2_shinsuishin",
+  "01_flood_l2_keizoku_data",
   "01_flood_l2_kaokutoukai_hanran_data",
   "01_flood_l2_kaokutoukai_kagan_data",
   "02_naisui_data",
   //  "01_flood_l2_kaokutoukai_hanran_riskhantei",
   //  "01_flood_l2_kaokutoukai_kagan",
   "03_hightide_l2_shinsuishin",
-  "04_tsunami_newlegend",
+  "04_tsunami_newlegend_data",
+  // "04_tsunami_newlegend",
   "05_dosekiryukeikaikuiki",
   "05_kyukeishakeikaikuiki",
   "05_jisuberikeikaikuiki",
   "05_nadarekikenkasyo",
-  "07_tameike"
+  // "07_tameike"
 ];
 
 map.on('click', e => {
@@ -467,7 +469,10 @@ const drawTileImages = (lat, lng, zl, px, ds) => {
         for( let i = 0; i < buf.length / ch; i++ ){
           const [ r, g, b, a ] = [ buf[ i * ch ], buf[ i * ch + 1 ], buf[ i * ch + 2 ], buf[ i * ch + 3 ]  ];
           let dp = "";
-          if(ds == "01_flood_l2_shinsuishin" || ds == "03_hightide_l2_shinsuishin" || ds == "04_tsunami_newlegend"){
+          if(ds == "01_flood_l2_shinsuishin" 
+          || ds == "02_naisui_data" 
+          || ds == "03_hightide_l2_shinsuishin" 
+          || ds == "04_tsunami_newlegend"){
             dp = infoFromColor( r, g, b ); //`${r}-${g}-${b}-${a}`;
           }else{
             dp = `${r}-${g}-${b}`;
