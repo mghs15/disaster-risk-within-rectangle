@@ -42,6 +42,11 @@ table th, table td {
 </head>
 <body>
 <div id="input-area">
+  <label for="timing">タイミング:</label>
+  <select id="timing" name="timing">
+    <option value="click">クリック時</option>
+    <option value="moveend">地図移動時</option>
+  </select>
   <label for="px">バッファ（ピクセル）:</label>
   <input type="number" id="px" name="px" min="0" max="125" value="50"/>
   <label for="disaster">災害リスク情報:</label>
@@ -113,8 +118,24 @@ const disaster = [
 ];
 
 map.on('click', e => {
-  const px = +document.getElementById("px").value;
+  const t = document.getElementById("timing").value;
+  if(t != "click") return;
   const center = e.lngLat;
+  getSetDat(center);
+});
+
+map.on('moveend', e => {
+  const t = document.getElementById("timing").value;
+  if(t != "moveend") return;
+  const center = map.getCenter();
+  getSetDat(center);
+});
+
+const getSetDat = (lngLat) => {
+  
+  const px = +document.getElementById("px").value;
+  
+  const center = lngLat;
   console.log(center);
   const z = Math.round(map.getZoom());
   const zl = (z+2 < 17) ? z+2 : 17;
@@ -128,7 +149,7 @@ map.on('click', e => {
   disaster.forEach( ds => {
     drawTileImages(center.lat, center.lng, zl, px, ds);
   });
-});
+}
 
 map.on('load', function() {
 
@@ -511,25 +532,30 @@ const drawTileImages = (lat, lng, zl, px, ds) => {
           const [ r, g, b, a ] = [ buf[ i * ch ], buf[ i * ch + 1 ], buf[ i * ch + 2 ], buf[ i * ch + 3 ]  ];
           let dp = "";
           if(ds == "01_flood_l2_shinsuishin" 
-          || ds == "02_naisui_data" 
+//          || ds == "02_naisui_data" 
           || ds == "03_hightide_l2_shinsuishin" 
           || ds == "04_tsunami_newlegend"){
             dp = infoFromColor( r, g, b ); //`${r}-${g}-${b}-${a}`;
           }else{
             dp = `${r}-${g}-${b}`;
           } 
-          dp = `<span style="background-color:rgb(${r},${g},${b});">${dp}</span>`;
-          if(!tmp[dp]) tmp[dp] = 0;
-          tmp[dp] += 1;
+          
+          if(!tmp[dp]){
+            tmp[dp] = {};
+            tmp[dp].count = 0;
+            tmp[dp].span = `<span style="background-color:rgb(${r},${g},${b});">${dp}</span>`;
+          }
+          tmp[dp].count += 1;
         }
         
         // HTML レンダリング関係
         
         let html = "<table>";
         const keys = Object.keys(tmp).sort().reverse();
+        console.log(keys);
         keys.forEach( name => {
-          const ratio = Math.floor(tmp[name]/(canvas.width * canvas.height) * 100);
-          const s = `<tr><td>${name}</td><td>${tmp[name]}</td><td>${ratio}%</td></tr>`;
+          const ratio = Math.floor(tmp[name].count/(canvas.width * canvas.height) * 100);
+          const s = `<tr><td>${tmp[name].span}</td><td>${tmp[name].count}</td><td>${ratio}%</td></tr>`;
           html += s;
         });
         
